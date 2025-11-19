@@ -1,40 +1,21 @@
-/*
-===================================================================================
-                PROJETO FINAL ó AGENDA DE CONTATOS (C PURO)
------------------------------------------------------------------------------------
-VERS√O DID¡TICA 2025 ó COMENTADA LINHA POR LINHA
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<ctype.h>
+#include<locale.h>
 
-CorreÁ„o de compatibilidade:
---------------------------
-ï As vari·veis de loop (como 'i') foram movidas para o inÌcio das funÁıes,
-  garantindo a compatibilidade com o padr„o C89 (ANSI C).
 
-====================================================================================
-*/
-
-#include <stdio.h>    // FunÁıes de I/O (printf, scanf, FILE*, etc.)
-#include <stdlib.h>   // Para a funÁ„o system e EXIT_FAILURE
-#include <string.h>   // Para as funÁıes de manipulaÁ„o de strings (strcat, strcspn, strcpy)
-#include <ctype.h>    // Para a funÁ„o toupper (converter para mai˙scula)
-#include <locale.h>   // Para setlocale (configuraÁ„o de acentos e caracteres)
-
-/* -------------------------------------------------------------------------------
-   ESTRUTURA DE DADOS
-   Define o formato EXATO de cada registro salvo no arquivo bin·rio.
-   O arquivo armazena m˙ltiplos blocos do tamanho de 'reg'.
--------------------------------------------------------------------------------- */
 typedef struct {
     char nome[50];
     char tel[20];
     char email[50];
-    char status;    // 1 byte
+    char status;
     /*
     status = ' '  -> registro ativo
-    status = '*'  -> registro excluÌdo (exclus„o lÛgica)
+    status = '*'  -> registro exclu√≠do (exclus√£o l√≥gica)
     */
 } reg;
 
-/* ProtÛtipos das funÁıes */
 void configurar_locale(void);
 void limpa_buffer(void);
 void ler_string(char *s, int tam);
@@ -44,63 +25,36 @@ void consultar(FILE *arq);
 void gerar_arquivo_texto(FILE *arq);
 void excluir(FILE *arq);
 
-/* ====================================================================================
-   limpa_buffer
-   ------------------------------------------------------------------------------------
-   FUN«√O ESSENCIAL para evitar a leitura do '\n' (Enter) deixado pelo scanf().
-   Garante que a prÛxima funÁ„o de leitura de string (fgets) funcione corretamente.
-   ==================================================================================== */
 void limpa_buffer(void) {
     int c;
-    // LÍ e descarta caracteres atÈ encontrar o '\n' ou o fim do arquivo (EOF).
     while ((c = getchar()) != '\n' && c != EOF);
 }
 
-/* ====================================================================================
-   ler_string
-   ------------------------------------------------------------------------------------
-   FunÁ„o auxiliar para leitura SEGURA de strings (evita Buffer Overflow).
-   ==================================================================================== */
 void ler_string(char *s, int tam) {
-    // 1. fgets lÍ a string da entrada padr„o (stdin), respeitando o limite 'tam'.
+
     fgets(s, tam, stdin);
-    
-    // 2. strcspn encontra a posiÁ„o do primeiro '\n' na string.
-    // 3. O '\n' È substituÌdo por '\0' (terminador nulo), "limpando" a quebra de linha.
     s[strcspn(s, "\n")] = '\0';
 }
 
-/* ====================================================================================
-   tamanho
-   ------------------------------------------------------------------------------------
-   Calcula o n˙mero total de registros no arquivo.
-   ==================================================================================== */
 int tamanho(FILE *arq) {
-    long pos = ftell(arq);        // Salva a posiÁ„o atual
-    fseek(arq, 0, SEEK_END);      // Move o ponteiro para o final do arquivo
-    long fim = ftell(arq);        // ObtÈm o tamanho total em bytes
-    fseek(arq, pos, SEEK_SET);    // Restaura o ponteiro para a posiÁ„o original
+    long pos = ftell(arq);
+    fseek(arq, 0, SEEK_END);
+    long fim = ftell(arq);
+    fseek(arq, pos, SEEK_SET);
     
-    // Retorna o n˙mero de registros (tamanho total / tamanho do struct)
     return (int)(fim / sizeof(reg));
 }
 
-/* ====================================================================================
-   cadastrar
-   ------------------------------------------------------------------------------------
-   Adiciona um novo registro ao final do arquivo, utilizando a funÁ„o ler_string segura.
-   ==================================================================================== */
 void cadastrar(FILE *arq) {
     reg contato;
-    contato.status = ' ';  // Novo registro È sempre ativo
+    contato.status = ' ';
     char confirma;
 
     printf("\n=== CADASTRAR CONTATO ===\n");
-    printf("Registro n˙mero: %d\n", tamanho(arq) + 1);
+    printf("Registro n√∫mero: %d\n", tamanho(arq) + 1);
 
-    // Leitura das strings usando a funÁ„o segura ler_string()
     printf("Nome: ");
-    ler_string(contato.nome, sizeof(contato.nome)); // Usa sizeof() para garantir limite
+    ler_string(contato.nome, sizeof(contato.nome));
     
     printf("Telefone: ");
     ler_string(contato.tel, sizeof(contato.tel));
@@ -109,62 +63,53 @@ void cadastrar(FILE *arq) {
     ler_string(contato.email, sizeof(contato.email));
     
     printf("Confirmar cadastro (s/n)? ");
-    // O scanf com %c È usado para ler apenas o caractere de confirmaÁ„o
     if (scanf("%c", &confirma) != 1) { 
-        printf("Entrada inv·lida. Cancelando cadastro.\n");
+        printf("Entrada inv√°lida. Cancelando cadastro.\n");
         limpa_buffer();
         return;
     }
-    limpa_buffer(); // Limpa o buffer apÛs o scanf
+    limpa_buffer();
 
     if (toupper(confirma) == 'S') {
-        fseek(arq, 0, SEEK_END);                       // Posiciona no fim (para APPEND)
-        fwrite(&contato, sizeof(reg), 1, arq);         // Grava 1 bloco de 'reg'
-        fflush(arq);                                   // ForÁa a gravaÁ„o imediata
+        fseek(arq, 0, SEEK_END);
+        fwrite(&contato, sizeof(reg), 1, arq);
+        fflush(arq);
         printf("Contato salvo com sucesso!\n");
     } else {
         printf("Cadastro cancelado.\n");
     }
 }
 
-/* ====================================================================================
-   consultar (vers„o com DEBUG did·tico)
-   ------------------------------------------------------------------------------------
-   Exibe um registro pelo seu cÛdigo, demonstrando o Acesso Direto (fseek).
-   ==================================================================================== */
 void consultar(FILE *arq) {
     int nr;
     reg contato;
 
-    printf("\nInforme o cÛdigo do contato: ");
+    printf("\nInforme o c√≥digo do contato: ");
     if (scanf("%d", &nr) != 1) {
-        printf("Entrada inv·lida!\n");
+        printf("Entrada inv√°lida!\n");
         limpa_buffer();
         return;
     }
-    limpa_buffer(); // Limpeza apÛs scanf
+    limpa_buffer();
 
     int total = tamanho(arq);
     printf("[DEBUG] Total de registros no arquivo: %d\n", total);
 
     if (nr <= 0 || nr > total) {
-        printf("CÛdigo inv·lido! Total = %d\n", total);
+        printf("C√≥digo inv√°lido! Total = %d\n", total);
         return;
     }
 
-    // Calcula a posiÁ„o em bytes: (cÛdigo - 1) * tamanho_do_registro
     long pos = (long)(nr - 1) * sizeof(reg);
 
-    printf("[DEBUG] PosiÁ„o em bytes para fseek: %ld\n", pos);
+    printf("[DEBUG] Posi√ß√£o em bytes para fseek: %ld\n", pos);
 
-    // Move o ponteiro para a posiÁ„o exata (SEEK_SET = InÌcio do arquivo)
     if (fseek(arq, pos, SEEK_SET) != 0) {
         printf("[ERRO] Falha no fseek.\n");
         return;
     }
     printf("[DEBUG] fseek OK\n");
 
-    // LÍ 1 bloco de 'reg' para a vari·vel 'contato'
     size_t lido = fread(&contato, sizeof(reg), 1, arq);
 
     if (lido != 1) {
@@ -174,9 +119,9 @@ void consultar(FILE *arq) {
 
     printf("[DEBUG] status lido = '%c'\n", contato.status);
 
-    printf("\n=== CONTATO (C”DIGO %d) ===\n", nr);
+    printf("\n=== CONTATO (C√ìDIGO %d) ===\n", nr);
     if (contato.status == '*') {
-        printf("Status: EXCLUÕDO LOGICAMENTE\n");
+        printf("Status: EXCLU√çDO LOGICAMENTE\n");
     }
 
     printf("Nome.....: %s\n", contato.nome);
@@ -184,51 +129,41 @@ void consultar(FILE *arq) {
     printf("E-mail...: %s\n", contato.email);
 }
 
-/* ====================================================================================
-   gerar_arquivo_texto (CORRIGIDO PARA C89)
-   ------------------------------------------------------------------------------------
-   Gera um relatÛrio (.txt) formatado, lendo sequencialmente os registros bin·rios.
-   ==================================================================================== */
 void gerar_arquivo_texto(FILE *arq) {
     char nomearq[80];
     reg contato;
-    // CORRE«√O C89: Vari·veis declaradas no inÌcio da funÁ„o
     int i;
     int total;
-    char status_str[12]; // Buffer para armazenar "ATIVO" ou "EXCLUIDO"
+    char status_str[12];
 
     printf("\nGerar Arquivo Texto\n");
-    printf("Nome do arquivo (sem extens„o): ");
+    printf("Nome do arquivo (sem extens√£o): ");
     ler_string(nomearq, sizeof(nomearq));
-    strcat(nomearq, ".txt"); // Adiciona a extens„o ".txt"
+    strcat(nomearq, ".txt");
 
-    FILE *arqtxt = fopen(nomearq, "w"); // Abre no modo escrita de texto
+    FILE *arqtxt = fopen(nomearq, "w");
 
     if (!arqtxt) {
         printf("Erro ao criar arquivo texto.\n");
         return;
     }
 
-    // Impress„o do cabeÁalho no arquivo .txt
-    fprintf(arqtxt, "RELAT”RIO COMPLETO DE CONTATOS\n\n");
+    fprintf(arqtxt, "RELAT√ìRIO COMPLETO DE CONTATOS\n\n");
     fprintf(arqtxt, "COD  %-25s %-15s %-25s STATUS\n",
             "NOME", "TELEFONE", "EMAIL");
     fprintf(arqtxt, "-------------------------------------------------------------------------------------------\n");
 
     total = tamanho(arq);
 
-    // Loop de iteraÁ„o sequencial (COMPATÕVEL C89)
     for (i = 0; i < total; i++) {
         fseek(arq, i * sizeof(reg), SEEK_SET);
         fread(&contato, sizeof(reg), 1, arq);
-
-        // LÛgica de status
+        
         if (contato.status == '*')
             strcpy(status_str, "EXCLUIDO");
         else
             strcpy(status_str, "ATIVO");
 
-        // Escreve o registro no arquivo texto
         fprintf(arqtxt, "%03d %-25s %-15s %-25s %s\n",
                 i + 1,
                 contato.nome,
@@ -241,19 +176,14 @@ void gerar_arquivo_texto(FILE *arq) {
     printf("\nArquivo '%s' gerado com sucesso!\n", nomearq);
 }
 
-/* ====================================================================================
-   excluir
-   ------------------------------------------------------------------------------------
-   Implementa a Exclus„o LÛgica: atualiza o campo 'status' do registro no arquivo.
-   ==================================================================================== */
 void excluir(FILE *arq) {
     int nr;
     char confirma;
     reg contato;
 
-    printf("\nInforme o cÛdigo do registro para excluir: ");
+    printf("\nInforme o c√≥digo do registro para excluir: ");
     if (scanf("%d", &nr) != 1) {
-        printf("Entrada inv·lida!\n");
+        printf("Entrada inv√°lida!\n");
         limpa_buffer();
         return;
     }
@@ -261,50 +191,41 @@ void excluir(FILE *arq) {
 
     int total = tamanho(arq);
     if (nr <= 0 || nr > total) {
-        printf("CÛdigo inv·lido.\n");
+        printf("C√≥digo inv√°lido.\n");
         return;
     }
 
-    // 1. L  o registro
     long pos_byte = (long)(nr - 1) * sizeof(reg);
     fseek(arq, pos_byte, SEEK_SET);
     fread(&contato, sizeof(reg), 1, arq);
 
     if (contato.status == '*') {
-        printf("Registro j· estava excluÌdo.\n");
+        printf("Registro j√° estava exclu√≠do.\n");
         return;
     }
 
-    printf("\nConfirmar exclus„o (s/n)? ");
+    printf("\nConfirmar exclus√£o (s/n)? ");
     if (scanf("%c", &confirma) != 1) {
-        printf("Entrada inv·lida. Cancelando exclus„o.\n");
+        printf("Entrada inv√°lida. Cancelando exclus√£o.\n");
         limpa_buffer();
         return;
     }
     limpa_buffer();
 
     if (toupper(confirma) == 'S') {
-        // 2. MODIFICA o status
         contato.status = '*';
         
-        // 3. RETORNA ‡ posiÁ„o e REESCREVE o registro modificado (UPDATE no arquivo)
         fseek(arq, pos_byte, SEEK_SET);
         fwrite(&contato, sizeof(reg), 1, arq);
         fflush(arq);
         
-        printf("Registro excluÌdo com sucesso!\n");
+        printf("Registro exclu√≠do com sucesso!\n");
     } else {
-        printf("Exclus„o cancelada.\n");
+        printf("Exclus√£o cancelada.\n");
     }
 }
 
-/* ====================================================================================
-   configurar_locale (CORRIGIDO PARA C89)
-   -----------------
-   Tenta configurar o ambiente para exibir acentos e caracteres especiais (UTF-8).
-   ==================================================================================== */
 void configurar_locale(void) {
-    // Comando para forÁar UTF-8 no terminal Windows
     #if defined(_WIN32)
     system("chcp 65001 > nul");
     #endif
@@ -316,7 +237,6 @@ void configurar_locale(void) {
         "Portuguese",
         ""
     };
-    // CORRE«√O C89: Vari·vel de loop 'i' declarada aqui
     int i; 
     for (i = 0; i < 5; i++) {
         const char *r = setlocale(LC_ALL, locais[i]);
@@ -325,25 +245,18 @@ void configurar_locale(void) {
             return;
         }
     }
-    printf("Aviso: Locale n„o pÙde ser configurado.\n");
+    printf("Aviso: Locale n√£o p√¥de ser configurado.\n");
 }
 
-/* ====================================================================================
-   main ó FUN«√O PRINCIPAL
-   ------------------------------------------------------------------------------------
-   Gerencia a abertura/criaÁ„o do arquivo ("dados1.dat") e o loop do menu.
-   ==================================================================================== */
 int main(void) {
     configurar_locale();
     
-    // 1. Tenta abrir para Leitura/Escrita Bin·ria (r+b, se j· existir)
     FILE *arq = fopen("dados1.dat", "r+b"); 
     
     if (!arq) {
-        // 2. Se n„o existe, tenta Criar para Leitura/Escrita Bin·ria (w+b)
         arq = fopen("dados1.dat", "w+b");
         if (!arq) {
-            printf("Erro crÌtico ao abrir/criar arquivo de dados.\n");
+            printf("Erro cr√≠tico ao abrir/criar arquivo de dados.\n");
             return 1;
         }
     }
@@ -358,14 +271,14 @@ int main(void) {
         printf("5. Sair\n");
         printf("--------------------------------------\n");
         printf("Total de registros: %d\n", tamanho(arq));
-        printf("OpÁ„o: ");
+        printf("Op√ß√£o: ");
         
         if (scanf("%d", &op) != 1) {
-            printf("Digite um n˙mero v·lido.\n");
+            printf("Digite um n√∫mero v√°lido.\n");
             limpa_buffer(); 
             continue;
         }
-        limpa_buffer(); // Limpa o '\n'
+        limpa_buffer();
 
         switch (op) {
             case 1: cadastrar(arq); break;
@@ -373,10 +286,10 @@ int main(void) {
             case 3: gerar_arquivo_texto(arq); break;
             case 4: excluir(arq); break;
             case 5: printf("Fechando arquivo e saindo...\n"); break;
-            default: printf("OpÁ„o inv·lida!\n");
+            default: printf("Op√ß√£o inv√°lida!\n");
         }
     } while (op != 5);
 
-    fclose(arq); // Fecha o arquivo
+    fclose(arq);
     return 0;
 }
