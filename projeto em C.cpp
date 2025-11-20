@@ -50,7 +50,7 @@ void cadastrar(FILE *arq) {
     contato.status = ' ';
     char confirma;
 
-    printf("\n=== CADASTRAR CONTATO ===\n");
+    printf("\n=== CRIAR UMA CONTA ===\n");
     printf("Registro número: %d\n", tamanho(arq) + 1);
 
     printf("Nome: ");
@@ -62,9 +62,9 @@ void cadastrar(FILE *arq) {
     printf("E-mail: ");
     ler_string(contato.email, sizeof(contato.email));
     
-    printf("Confirmar cadastro (s/n)? ");
+    printf("Confirmar a conta (s/n)? ");
     if (scanf("%c", &confirma) != 1) { 
-        printf("Entrada inválida. Cancelando cadastro.\n");
+        printf("Entrada inválida. Cancelando a conta.\n");
         limpa_buffer();
         return;
     }
@@ -76,7 +76,7 @@ void cadastrar(FILE *arq) {
         fflush(arq);
         printf("Contato salvo com sucesso!\n");
     } else {
-        printf("Cadastro cancelado.\n");
+        printf("Conta cancelado.\n");
     }
 }
 
@@ -181,7 +181,7 @@ void excluir(FILE *arq) {
     char confirma;
     reg contato;
 
-    printf("\nInforme o código do registro para excluir: ");
+    printf("\nInforme o código da conta para excluir: ");
     if (scanf("%d", &nr) != 1) {
         printf("Entrada inválida!\n");
         limpa_buffer();
@@ -200,7 +200,7 @@ void excluir(FILE *arq) {
     fread(&contato, sizeof(reg), 1, arq);
 
     if (contato.status == '*') {
-        printf("Registro já estava excluído.\n");
+        printf("A conta já estava excluída.\n");
         return;
     }
 
@@ -263,11 +263,11 @@ int main(void) {
 
     int op;
     do {
-        printf("\n========= AGENDA DE CONTATOS =========\n");
-        printf("1. Cadastrar\n");
+        printf("\n========= MENU INICIAL =========\n");
+        printf("1. Criar uma conta\n");
         printf("2. Consultar\n");
         printf("3. Gerar arquivo texto\n");
-        printf("4. Excluir registro\n");
+        printf("4. Deletar a conta\n");
         printf("5. Sair\n");
         printf("--------------------------------------\n");
         printf("Total de registros: %d\n", tamanho(arq));
