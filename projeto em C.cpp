@@ -4,7 +4,6 @@
 #include<ctype.h>
 #include<locale.h>
 
-
 typedef struct {
     char nome[50];
     char tel[20];
@@ -289,4 +288,5 @@ int main(void) {
     fclose(arq);
     return 0;
 }
+
 
