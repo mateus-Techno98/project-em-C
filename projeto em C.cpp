@@ -10,10 +10,6 @@ typedef struct {
     char tel[20];
     char email[50];
     char status;
-    /*
-    status = ' '  -> registro ativo
-    status = '*'  -> registro excluído (exclusão lógica)
-    */
 } reg;
 
 void configurar_locale(void);
@@ -293,3 +289,4 @@ int main(void) {
     fclose(arq);
     return 0;
 }
+
